@@ -145,13 +145,22 @@ const modal=$('#workModal');
 document.querySelectorAll('.work-card').forEach(card=>card.addEventListener('click',()=>{const thumb=card.querySelector('.image-art img');if(!thumb)return;$('#modalTitle').textContent=card.dataset.title;$('#modalDesc').textContent=card.dataset.desc;$('#modalImage').src=thumb.src;$('#modalImage').alt=card.dataset.title+' — enlarged image';modal.classList.add('open');document.body.style.overflow='hidden';}));
 function closeModal(){modal.classList.remove('open');document.body.style.overflow='';$('#modalImage').removeAttribute('src')}
 $('#closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
 async function copyTextReliable(value){
   if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(value);return true}catch(e){}}
   const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';field.style.pointerEvents='none';document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);let copied=false;try{copied=document.execCommand('copy')}catch(e){}field.remove();return copied;
 }
-$('#copyEmail').addEventListener('click',async()=>{const username='notvryxle';const ok=await copyTextReliable(username);$('#toast').textContent=ok?'Discord username copied: '+username:'Copy was blocked — select and copy: '+username;$('#toast').classList.add('show');if(!ok){const promptBox=document.createElement('div');promptBox.textContent='Your Discord username: '+username;promptBox.style.cssText='position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);padding:22px 25px;background:#101827;color:white;border:1px solid #5daaff;border-radius:14px;box-shadow:0 20px 70px #000;font-weight:800;user-select:text';promptBox.title='Select the username to copy';document.body.appendChild(promptBox);promptBox.addEventListener('click',()=>{const r=document.createRange();r.selectNodeContents(promptBox);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r)});setTimeout(()=>promptBox.remove(),6000)}setTimeout(()=>$('#toast').classList.remove('show'),3200)});
 
-// Background Music Control Logic
+$('#copyEmail').addEventListener('click',async()=>{
+  const username='notvryxle';
+  const ok=await copyTextReliable(username);
+  const toast=$('#toast');
+  toast.textContent=ok?'Discord username copied: '+username:'Copy blocked — select & copy: '+username;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),3200);
+});
+
+// Background Music Control Logic & Auto-Play Trigger
 const bgMusic = $('#bgMusic');
 const musicButton = $('#musicToggle');
 const musicLabel = $('#musicLabel');
@@ -176,6 +185,25 @@ musicButton.addEventListener('click', async () => {
     bgMusic.pause();
     setMusicState(false, 'Play ambient music');
   }
+});
+
+// Try to auto-play immediately on load
+window.addEventListener('DOMContentLoaded', () => {
+  bgMusic.play().then(() => {
+    setMusicState(true, 'Background music on');
+  }).catch(() => {
+    const unlockAudio = () => {
+      bgMusic.play().then(() => {
+        setMusicState(true, 'Background music on');
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('scroll', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      }).catch(err => console.log("Unlock play failed:", err));
+    };
+    window.addEventListener('click', unlockAudio, { once: true });
+    window.addEventListener('scroll', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
+  });
 });
 
 bgMusic.addEventListener('ended', () => setMusicState(false, 'Play ambient music'));
