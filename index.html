@@ -128,8 +128,11 @@
   <div class="lightbox-image-wrap"><img class="lightbox-image" id="modalImage" alt="Enlarged portfolio artwork"></div>
   <div class="lightbox-hint">Press Esc or click outside the image to close</div>
 </div></div>
+
+<!-- Background Audio & Toggle Button -->
 <audio id="bgMusic" src="assets/background.mp3" loop preload="auto"></audio>
 <button class="music-toggle" id="musicToggle" type="button" aria-pressed="false" aria-label="Turn background music on"><span class="music-dot"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11.2a4 4 0 1 1-2-3.46V6.1l10-2.5v10.6a4 4 0 1 1-2-3.46V3.1L12 5z"/></svg><span id="musicLabel">Play ambient music</span></button>
+
 <div class="toast" id="toast">Discord username copied</div>
 <script>
 const $=s=>document.querySelector(s);
@@ -138,10 +141,6 @@ const dismissIntro=()=>{if(intro)intro.classList.add('done')};
 window.setTimeout(dismissIntro,2400);
 intro?.addEventListener('click',dismissIntro);
 $('#year').textContent=new Date().getFullYear();
-const impact=$('#impactRange');
-function updateImpact(){const v=+impact.value;$('#impactNum').textContent=v;$('#impactLabel').textContent=v+'% emphasis';$('#impactBar').style.width=v+'%';$('#impactText').textContent=v<35?'Quiet direction · More breathing room':v<70?'Balanced hierarchy · Focused contrast':'Strong hierarchy · Clear focal point';}
-impact.addEventListener('input',updateImpact);updateImpact();
-$('#detailRange').addEventListener('input',e=>{const v=+e.target.value;$('#detailText').textContent=`Detail level: ${v}% · ${v<30?'Minimal composition':v<65?'Clean composition':'Rich, layered composition'}`;$('.case-art').style.filter=`saturate(${.65+v/120}) contrast(${.9+v/250})`;$('.case-art').style.background=`linear-gradient(${135+v/3}deg, hsl(${210-v/3} 48% 22%), #10202c 45%, hsl(${225+v/4} 50% 30%))`;});
 const modal=$('#workModal');
 document.querySelectorAll('.work-card').forEach(card=>card.addEventListener('click',()=>{const thumb=card.querySelector('.image-art img');if(!thumb)return;$('#modalTitle').textContent=card.dataset.title;$('#modalDesc').textContent=card.dataset.desc;$('#modalImage').src=thumb.src;$('#modalImage').alt=card.dataset.title+' — enlarged image';modal.classList.add('open');document.body.style.overflow='hidden';}));
 function closeModal(){modal.classList.remove('open');document.body.style.overflow='';$('#modalImage').removeAttribute('src')}
@@ -151,7 +150,8 @@ async function copyTextReliable(value){
   const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';field.style.pointerEvents='none';document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);let copied=false;try{copied=document.execCommand('copy')}catch(e){}field.remove();return copied;
 }
 $('#copyEmail').addEventListener('click',async()=>{const username='notvryxle';const ok=await copyTextReliable(username);$('#toast').textContent=ok?'Discord username copied: '+username:'Copy was blocked — select and copy: '+username;$('#toast').classList.add('show');if(!ok){const promptBox=document.createElement('div');promptBox.textContent='Your Discord username: '+username;promptBox.style.cssText='position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);padding:22px 25px;background:#101827;color:white;border:1px solid #5daaff;border-radius:14px;box-shadow:0 20px 70px #000;font-weight:800;user-select:text';promptBox.title='Select the username to copy';document.body.appendChild(promptBox);promptBox.addEventListener('click',()=>{const r=document.createRange();r.selectNodeContents(promptBox);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r)});setTimeout(()=>promptBox.remove(),6000)}setTimeout(()=>$('#toast').classList.remove('show'),3200)});
-// Play the user's MP3 from the repository's assets folder.
+
+// Background Music Control Logic
 const bgMusic = $('#bgMusic');
 const musicButton = $('#musicToggle');
 const musicLabel = $('#musicLabel');
@@ -174,13 +174,12 @@ musicButton.addEventListener('click', async () => {
     }
   } else {
     bgMusic.pause();
-    setMusicState(false, 'Play background music');
+    setMusicState(false, 'Play ambient music');
   }
 });
 
-bgMusic.addEventListener('ended', () => setMusicState(false, 'Play background music'));
+bgMusic.addEventListener('ended', () => setMusicState(false, 'Play ambient music'));
 bgMusic.addEventListener('error', () => setMusicState(false, 'Music file not found'));
-
 </script>
 </body>
 </html>
