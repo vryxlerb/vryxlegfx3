@@ -128,6 +128,7 @@
   <div class="lightbox-image-wrap"><img class="lightbox-image" id="modalImage" alt="Enlarged portfolio artwork"></div>
   <div class="lightbox-hint">Press Esc or click outside the image to close</div>
 </div></div>
+<audio id="bgMusic" src="assets/background.mp3" loop preload="auto"></audio>
 <button class="music-toggle" id="musicToggle" type="button" aria-pressed="false" aria-label="Turn background music on"><span class="music-dot"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11.2a4 4 0 1 1-2-3.46V6.1l10-2.5v10.6a4 4 0 1 1-2-3.46V3.1L12 5z"/></svg><span id="musicLabel">Play ambient music</span></button>
 <div class="toast" id="toast">Discord username copied</div>
 <script>
@@ -150,20 +151,36 @@ async function copyTextReliable(value){
   const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';field.style.pointerEvents='none';document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);let copied=false;try{copied=document.execCommand('copy')}catch(e){}field.remove();return copied;
 }
 $('#copyEmail').addEventListener('click',async()=>{const username='notvryxle';const ok=await copyTextReliable(username);$('#toast').textContent=ok?'Discord username copied: '+username:'Copy was blocked — select and copy: '+username;$('#toast').classList.add('show');if(!ok){const promptBox=document.createElement('div');promptBox.textContent='Your Discord username: '+username;promptBox.style.cssText='position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);padding:22px 25px;background:#101827;color:white;border:1px solid #5daaff;border-radius:14px;box-shadow:0 20px 70px #000;font-weight:800;user-select:text';promptBox.title='Select the username to copy';document.body.appendChild(promptBox);promptBox.addEventListener('click',()=>{const r=document.createRange();r.selectNodeContents(promptBox);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r)});setTimeout(()=>promptBox.remove(),6000)}setTimeout(()=>$('#toast').classList.remove('show'),3200)});
-// A gentle, generated ambient synth loop. Browsers require a visitor gesture before audio can start.
-let audioCtx=null,musicNodes=[],musicOn=false;
-function startAmbient(){
-  const AC=window.AudioContext||window.webkitAudioContext;if(!AC){$('#musicLabel').textContent='Audio not supported';return}
-  audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')audioCtx.resume();
-  const master=audioCtx.createGain();master.gain.value=.0001;master.connect(audioCtx.destination);master.gain.setTargetAtTime(.075,audioCtx.currentTime,.8);musicNodes.push(master);
-  const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=850;filter.Q.value=.4;filter.connect(master);musicNodes.push(filter);
-  // Soft, slow chord tones create a calm futuristic background without an external audio file.
-  [[110,0],[164.81,.12],[220,.24],[329.63,.36]].forEach(([hz,delay],i)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=i===1?'triangle':'sine';osc.frequency.value=hz;gain.gain.value=i===3?.12:.2;osc.connect(gain);gain.connect(filter);osc.start(audioCtx.currentTime+delay);musicNodes.push(osc,gain)});
-  const lfo=audioCtx.createOscillator(),lfoGain=audioCtx.createGain();lfo.frequency.value=.08;lfoGain.gain.value=180;lfo.connect(lfoGain);lfoGain.connect(filter.frequency);lfo.start();musicNodes.push(lfo,lfoGain);
-  musicOn=true;$('#musicToggle').setAttribute('aria-pressed','true');$('#musicToggle').setAttribute('aria-label','Turn background music off');$('#musicLabel').textContent='Ambient music on';
+// Play the user's MP3 from the repository's assets folder.
+const bgMusic = $('#bgMusic');
+const musicButton = $('#musicToggle');
+const musicLabel = $('#musicLabel');
+bgMusic.volume = 0.25;
+
+function setMusicState(isOn, label) {
+  musicButton.setAttribute('aria-pressed', String(isOn));
+  musicButton.setAttribute('aria-label', isOn ? 'Turn background music off' : 'Turn background music on');
+  musicLabel.textContent = label;
 }
-function stopAmbient(){if(!audioCtx)return;const master=musicNodes.find(n=>n instanceof GainNode);if(master)master.gain.setTargetAtTime(.0001,audioCtx.currentTime,.18);setTimeout(()=>{musicNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(e){}try{n.disconnect()}catch(e){}});musicNodes=[]},900);musicOn=false;$('#musicToggle').setAttribute('aria-pressed','false');$('#musicToggle').setAttribute('aria-label','Turn background music on');$('#musicLabel').textContent='Play ambient music'}
-$('#musicToggle').addEventListener('click',()=>{if(musicOn)stopAmbient();else startAmbient()});
+
+musicButton.addEventListener('click', async () => {
+  if (bgMusic.paused) {
+    try {
+      await bgMusic.play();
+      setMusicState(true, 'Background music on');
+    } catch (error) {
+      setMusicState(false, 'Could not play — check MP3 path');
+      console.error('Background music failed to play:', error);
+    }
+  } else {
+    bgMusic.pause();
+    setMusicState(false, 'Play background music');
+  }
+});
+
+bgMusic.addEventListener('ended', () => setMusicState(false, 'Play background music'));
+bgMusic.addEventListener('error', () => setMusicState(false, 'Music file not found'));
+
 </script>
 </body>
 </html>
