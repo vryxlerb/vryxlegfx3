@@ -182,7 +182,7 @@ bgMusic.addEventListener('ended', () => setMusicState(false, 'Play background mu
 bgMusic.addEventListener('error', () => setMusicState(false, 'Music file not found'));
 
 
-// Satisfying, lightweight UI click sound. Audio is created only after a user interaction.
+// Soft mechanical keyboard-style click for buttons, work cards, and top navigation.
 let clickAudioContext;
 function playClickSound(){
   try {
@@ -190,34 +190,45 @@ function playClickSound(){
     if (!AudioContextClass) return;
     clickAudioContext ||= new AudioContextClass();
     if (clickAudioContext.state === 'suspended') clickAudioContext.resume();
-    const now = clickAudioContext.currentTime;
-    const master = clickAudioContext.createGain();
-    master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.16, now + 0.008);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-    master.connect(clickAudioContext.destination);
-    const tone = clickAudioContext.createOscillator();
-    tone.type = 'sine';
-    tone.frequency.setValueAtTime(720, now);
-    tone.frequency.exponentialRampToValueAtTime(360, now + 0.085);
-    tone.connect(master);
-    tone.start(now);
-    tone.stop(now + 0.13);
-    const tick = clickAudioContext.createOscillator();
-    const tickGain = clickAudioContext.createGain();
-    tick.type = 'triangle';
-    tick.frequency.setValueAtTime(1450, now);
-    tickGain.gain.setValueAtTime(0.0001, now);
-    tickGain.gain.exponentialRampToValueAtTime(0.045, now + 0.003);
-    tickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
-    tick.connect(tickGain);
-    tickGain.connect(clickAudioContext.destination);
-    tick.start(now);
-    tick.stop(now + 0.04);
+    const ctx = clickAudioContext;
+    const now = ctx.currentTime;
+
+    // Short filtered noise makes the crisp keycap "tick".
+    const length = Math.floor(ctx.sampleRate * 0.045);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+      const fade = Math.pow(1 - i / length, 2.4);
+      data[i] = (Math.random() * 2 - 1) * fade;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2100 + Math.random() * 500, now);
+    filter.Q.setValueAtTime(0.85, now);
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.11, now + 0.002);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.042);
+    noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.046);
+
+    // A tiny low thock gives it a satisfying physical-key feel.
+    const thock = ctx.createOscillator();
+    const thockGain = ctx.createGain();
+    thock.type = 'triangle';
+    thock.frequency.setValueAtTime(190 + Math.random() * 35, now);
+    thock.frequency.exponentialRampToValueAtTime(105, now + 0.035);
+    thockGain.gain.setValueAtTime(0.0001, now);
+    thockGain.gain.exponentialRampToValueAtTime(0.055, now + 0.002);
+    thockGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+    thock.connect(thockGain); thockGain.connect(ctx.destination);
+    thock.start(now); thock.stop(now + 0.05);
   } catch (error) { /* Sound must never interfere with page interactions. */ }
 }
 document.addEventListener('click', event => {
-  if (event.target.closest('button, .btn, .pill')) playClickSound();
+  if (event.target.closest('button, .btn, .pill, .work-card, .navlinks a')) playClickSound();
 }, true);
 
 </script>
