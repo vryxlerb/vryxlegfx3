@@ -138,10 +138,7 @@ const dismissIntro=()=>{if(intro)intro.classList.add('done')};
 window.setTimeout(dismissIntro,2400);
 intro?.addEventListener('click',dismissIntro);
 $('#year').textContent=new Date().getFullYear();
-const impact=$('#impactRange');
-function updateImpact(){const v=+impact.value;$('#impactNum').textContent=v;$('#impactLabel').textContent=v+'% emphasis';$('#impactBar').style.width=v+'%';$('#impactText').textContent=v<35?'Quiet direction · More breathing room':v<70?'Balanced hierarchy · Focused contrast':'Strong hierarchy · Clear focal point';}
-impact.addEventListener('input',updateImpact);updateImpact();
-$('#detailRange').addEventListener('input',e=>{const v=+e.target.value;$('#detailText').textContent=`Detail level: ${v}% · ${v<30?'Minimal composition':v<65?'Clean composition':'Rich, layered composition'}`;$('.case-art').style.filter=`saturate(${.65+v/120}) contrast(${.9+v/250})`;$('.case-art').style.background=`linear-gradient(${135+v/3}deg, hsl(${210-v/3} 48% 22%), #10202c 45%, hsl(${225+v/4} 50% 30%))`;});
+// Optional demo controls are not present on this portfolio page, so skip their handlers.
 const modal=$('#workModal');
 document.querySelectorAll('.work-card').forEach(card=>card.addEventListener('click',()=>{const thumb=card.querySelector('.image-art img');if(!thumb)return;$('#modalTitle').textContent=card.dataset.title;$('#modalDesc').textContent=card.dataset.desc;$('#modalImage').src=thumb.src;$('#modalImage').alt=card.dataset.title+' — enlarged image';modal.classList.add('open');document.body.style.overflow='hidden';}));
 function closeModal(){modal.classList.remove('open');document.body.style.overflow='';$('#modalImage').removeAttribute('src')}
